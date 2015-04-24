@@ -9,6 +9,14 @@ using System.Xml;
 
 namespace SnowPlow
 {
+    public class IglooResult
+    {
+        public IglooResult() { }
+
+        public string ErrorMessage { get; set; }
+        public TestOutcome Outcome { get; set; }
+    }
+
     [ExtensionUri(SnowPlowTestExecutor.ExecutorUriString)]
     public class SnowPlowTestExecutor : ITestExecutor
     {
@@ -30,29 +38,36 @@ namespace SnowPlow
         {
             m_cancelled = false;
 
-            //TODO: First check which files we need to run and only run each one once rather than for every test case.
+            Dictionary<String, LinkedList<TestCase>> sources = new Dictionary<String, LinkedList<TestCase>>();
             foreach (TestCase test in tests)
+            {
+                if (!sources.ContainsKey(test.Source))
+                    sources.Add(test.Source, new LinkedList<TestCase>());
+                sources[test.Source].AddLast(test);
+            }
+
+            foreach (String source in sources.Keys)
             {
                 if (m_cancelled)
                 {
                     break;
                 }
 
-                frameworkHandle.SendMessage(TestMessageLevel.Informational, string.Format("SnowPlow: Plowing through {0}", test.FullyQualifiedName));
+                frameworkHandle.SendMessage(TestMessageLevel.Informational, string.Format("SnowPlow: Plowing through {0}", source));
 
                 // Use ProcessStartInfo class
                 ProcessStartInfo startInfo = new ProcessStartInfo();
                 startInfo.CreateNoWindow = false;
                 startInfo.UseShellExecute = false;
                 startInfo.RedirectStandardOutput = true;
-                startInfo.FileName = test.Source;
+                startInfo.FileName = source;
                 startInfo.WindowStyle = ProcessWindowStyle.Hidden;
                 startInfo.Arguments = "--output=xunit";
 
-                var testResult = new TestResult(test);
-
                 try
                 {
+                    Dictionary<String, IglooResult> results = new Dictionary<string, IglooResult>();
+
                     // Start the process, Call WaitForExit and then the using statement will close.
                     using (Process unittestProcess = Process.Start(startInfo))
                     {
@@ -79,34 +94,52 @@ namespace SnowPlow
                                     name = classnameAttribute.Value + "::" + name;
                                 }
 
-                                // Check we are looking at the test we wanted to run
-                                if (name == test.FullyQualifiedName)
+                                IglooResult result = new IglooResult();
+                                XmlNode failureNode = testNode.SelectSingleNode("failure");
+                                if (failureNode == null)
                                 {
-                                    XmlNode failureNode = testNode.SelectSingleNode("failure");
-                                    if (failureNode == null)
-                                    {
-                                        // Success, yay
-                                        testResult.Outcome = TestOutcome.Passed;
-                                    }
-                                    else
-                                    {
-                                        XmlAttribute messageAttribute = failureNode.Attributes["message"];
-                                        testResult.ErrorMessage = messageAttribute.Value;
-                                    }
+                                    // Success, yay
+                                    result.Outcome = TestOutcome.Passed;
                                 }
+                                else
+                                {
+                                    result.Outcome = TestOutcome.Failed;
+                                    XmlAttribute messageAttribute = failureNode.Attributes["message"];
+                                    result.ErrorMessage = messageAttribute.Value;
+                                }
+                                results[name] = result;
                             }
                         }
+                    }
+                    foreach (TestCase test in sources[source])
+                    {
+                        var testResult = new TestResult(test);
+                        if (results.ContainsKey(test.FullyQualifiedName))
+                        {
+                            IglooResult result = results[test.FullyQualifiedName];
+                            testResult.Outcome = result.Outcome;
+                            testResult.ErrorMessage = result.ErrorMessage;
+                        }
+                        else
+                        {
+                            testResult.Outcome = TestOutcome.NotFound;
+                        }
+                        frameworkHandle.RecordResult(testResult);
                     }
                 }
                 catch (Exception e)
                 {
                     // Log error.
                     frameworkHandle.SendMessage(TestMessageLevel.Error, string.Format("SnowPlow: Ran of the road. {0}", e.Message));
-                    testResult.Outcome = TestOutcome.Failed;
-                    testResult.ErrorMessage = "SnowPlow: Exception when running/parsing unit test: " + e.Message;
+                    foreach (TestCase test in sources[source])
+                    {
+                        var testResult = new TestResult(test);
+                        testResult.Outcome = TestOutcome.Skipped;
+                        testResult.ErrorMessage = "SnowPlow: Unable to perform unit test: " + e.Message;
+                        frameworkHandle.RecordResult(testResult);
+                    }
                 }
 
-                frameworkHandle.RecordResult(testResult);
             }
         }
 
