@@ -3,7 +3,6 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Xml;
 
@@ -14,6 +13,8 @@ namespace SnowPlow
         public IglooResult() { }
 
         public string ErrorMessage { get; set; }
+        public string File { get; set; }
+        public int LineNo { get; set; }
         public TestOutcome Outcome { get; set; }
     }
 
@@ -28,7 +29,7 @@ namespace SnowPlow
 
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            IEnumerable<TestCase> tests = SnowPlowTestDiscoverer.GetTests(sources, frameworkHandle, null);
+            IEnumerable<TestCase> tests = SnowPlowTestDiscoverer.GetTests(sources, runContext, frameworkHandle, null);
 
             RunTests(tests, runContext, frameworkHandle);
 
@@ -53,24 +54,38 @@ namespace SnowPlow
                     break;
                 }
 
-                frameworkHandle.SendMessage(TestMessageLevel.Informational, string.Format("SnowPlow: Plowing through {0}", source));
-
-                // Use ProcessStartInfo class
-                ProcessStartInfo startInfo = new ProcessStartInfo();
-                startInfo.CreateNoWindow = false;
-                startInfo.UseShellExecute = false;
-                startInfo.RedirectStandardOutput = true;
-                startInfo.FileName = source;
-                startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                startInfo.Arguments = "--output=xunit";
 
                 try
                 {
+
+                    FileInfo file = new FileInfo(source);
+                    if (!file.Exists)
+                    {
+                        frameworkHandle.SendMessage(TestMessageLevel.Warning, string.Format("SnowPlow: Asked to plow unknown file {0}", source));
+                    }
+
+                    Binary settings = Configuration.FindConfiguration(file);
+
+                    if (settings == null)
+                    {
+                        frameworkHandle.SendMessage(TestMessageLevel.Informational, string.Format("SnowPlow: Skipping source {0}, not listed in a plow definition", source));
+                        continue;
+                    }
+
+                    if (!settings.Enable)
+                    {
+                        frameworkHandle.SendMessage(TestMessageLevel.Informational, string.Format("SnowPlow: Skipping source {0}, disabled in plow definition", source));
+                        continue;
+                    }
+
+                    frameworkHandle.SendMessage(TestMessageLevel.Informational, string.Format("SnowPlow: Looking in {0}", source));
+
                     Dictionary<String, IglooResult> results = new Dictionary<string, IglooResult>();
 
                     // Start the process, Call WaitForExit and then the using statement will close.
-                    using (Process unittestProcess = Process.Start(startInfo))
+                    using (System.Diagnostics.Process unittestProcess = Process.forFile(file, settings))
                     {
+
                         string output = "";
                         using (StreamReader reader = unittestProcess.StandardOutput)
                         {
@@ -104,8 +119,7 @@ namespace SnowPlow
                                 else
                                 {
                                     result.Outcome = TestOutcome.Failed;
-                                    XmlAttribute messageAttribute = failureNode.Attributes["message"];
-                                    result.ErrorMessage = messageAttribute.Value;
+                                    result.ErrorMessage = failureNode.Attributes["message"].Value;
                                 }
                                 results[name] = result;
                             }
@@ -118,7 +132,9 @@ namespace SnowPlow
                         {
                             IglooResult result = results[test.FullyQualifiedName];
                             testResult.Outcome = result.Outcome;
-                            testResult.ErrorMessage = result.ErrorMessage;
+                            test.CodeFilePath = result.File;
+                            test.LineNumber = result.LineNo;
+                            testResult.ErrorStackTrace = result.ErrorMessage;
                         }
                         else
                         {
