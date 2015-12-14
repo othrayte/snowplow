@@ -58,8 +58,7 @@ namespace SnowPlow
                         {
                             output = reader.ReadToEnd();
                         }
-
-                        if (unittestProcess.ExitCode != 0)
+                        if (unittestProcess.ExitCode < 0)
                         {
                             logger.SendMessage(TestMessageLevel.Error, string.Format("SnowPlow: Broke plow, {0} returned exit code {1}", source, unittestProcess.ExitCode));
                             logger.SendMessage(TestMessageLevel.Informational, string.Format("SnowPlow: {0}:{1} >>> {2} <<<", source, unittestProcess.ExitCode, output));
