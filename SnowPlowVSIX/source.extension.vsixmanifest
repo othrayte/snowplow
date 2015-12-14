@@ -4,6 +4,8 @@
     <Identity Id="SnowPlow.9db87109-67e6-40f0-9b39-5a0d8510a1dd" Version="1.0.2.0" Language="en-US" Publisher="Adrian Cowan" />
     <DisplayName>SnowPlow</DisplayName>
     <Description xml:space="preserve">Igloo/Bandit Unittest Adaptor</Description>
+    <Icon>snowplow.ico</Icon>
+    <Tags>unittest, igloo, bandit</Tags>
   </Metadata>
   <Installation>
     <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[12.0]" />
