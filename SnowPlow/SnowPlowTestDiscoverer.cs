@@ -51,7 +51,7 @@ namespace SnowPlow
                     logger.SendMessage(TestMessageLevel.Informational, string.Format("SnowPlow: Looking in {0}", source));
 
                     // Start the process, Call WaitForExit and then the using statement will close.
-                    using (System.Diagnostics.Process unittestProcess = Process.forFile(file, settings))
+                    using (System.Diagnostics.Process unittestProcess = Process.forFile(file, settings, true))
                     {
                         string output = "";
                         using (StreamReader reader = unittestProcess.StandardOutput)
