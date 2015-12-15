@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Xml;
 
 namespace SnowPlow
@@ -119,7 +120,22 @@ namespace SnowPlow
                                 else
                                 {
                                     result.Outcome = TestOutcome.Failed;
-                                    result.ErrorMessage = failureNode.Attributes["message"].Value;
+                                    XmlAttribute messageAttribute = failureNode.Attributes["message"];
+                                    string message = messageAttribute.Value;
+
+                                    // Need single line option to match the multiline error message
+                                    Regex r = new Regex(@"([^(]+)[ ]?\(([0-9]+)\): (.*)$", RegexOptions.Singleline);
+                                    Match m = r.Match(message);
+                                    if (m.Success)
+                                    {
+                                        result.File = m.Groups[1].Value;
+                                        result.LineNo = Convert.ToInt32(m.Groups[2].Value);
+                                        result.ErrorMessage = m.Groups[3].Value;
+                                    }
+                                    else
+                                    {
+                                        result.ErrorMessage = message;
+                                    }
                                 }
                                 results[name] = result;
                             }
@@ -132,9 +148,8 @@ namespace SnowPlow
                         {
                             IglooResult result = results[test.FullyQualifiedName];
                             testResult.Outcome = result.Outcome;
-                            test.CodeFilePath = result.File;
-                            test.LineNumber = result.LineNo;
-                            testResult.ErrorStackTrace = result.ErrorMessage;
+                            testResult.ErrorStackTrace = result.File + ":" + result.LineNo;
+                            testResult.ErrorMessage = result.ErrorMessage;
                         }
                         else
                         {
