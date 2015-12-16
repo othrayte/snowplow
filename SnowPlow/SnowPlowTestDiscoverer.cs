@@ -75,14 +75,22 @@ namespace SnowPlow
                             XmlAttribute classnameAttribute = testNode.Attributes["classname"];
                             if (nameAttribute != null && !String.IsNullOrWhiteSpace(nameAttribute.Value))
                             {
-                                string name = nameAttribute.Value;
+                                string name;
+                                string displayName;
 
                                 if (classnameAttribute != null && !String.IsNullOrWhiteSpace(classnameAttribute.Value))
                                 {
-                                    name = classnameAttribute.Value + "::" + name;
+                                    name = IglooSpecNameFormatter.buildTestName(classnameAttribute.Value, nameAttribute.Value);
+                                    displayName = IglooSpecNameFormatter.buildDisplayName(classnameAttribute.Value, nameAttribute.Value);
+                                }
+                                else
+                                {
+                                    name = IglooSpecNameFormatter.buildTestName(nameAttribute.Value);
+                                    displayName = IglooSpecNameFormatter.buildDisplayName(nameAttribute.Value);
                                 }
 
                                 var testCase = new TestCase(name, SnowPlowTestExecutor.ExecutorUri, source);
+                                testCase.DisplayName = displayName;
 
                                 tests.Add(testCase);
 

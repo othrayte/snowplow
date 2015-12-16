@@ -66,6 +66,7 @@
   <ItemGroup>
     <Compile Include="IglooResult.cs" />
     <Compile Include="Configuration.cs" />
+    <Compile Include="IglooSpecNameFormatter.cs" />
     <Compile Include="Process.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SnowPlowTestDiscoverer.cs" />
