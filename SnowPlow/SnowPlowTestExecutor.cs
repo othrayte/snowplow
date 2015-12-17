@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Xml;
@@ -152,7 +153,9 @@ namespace SnowPlow
                 catch (Exception e)
                 {
                     // Log error.
-                    frameworkHandle.SendMessage(TestMessageLevel.Error, string.Format("SnowPlow: Ran of the road. {0}", e.Message));
+                    string message = string.Format("SnowPlow: Ran of the road. {0}", e.Message);
+                    Debug.Assert(false, message);
+                    frameworkHandle.SendMessage(TestMessageLevel.Error, message);
                     foreach (TestCase test in sources[source])
                     {
                         var testResult = new TestResult(test);

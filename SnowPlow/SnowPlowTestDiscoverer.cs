@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Xml;
@@ -106,7 +107,9 @@ namespace SnowPlow
                 catch (Exception e)
                 {
                     // Log error.
-                    logger.SendMessage(TestMessageLevel.Error, string.Format("SnowPlow: Exception thrown through windscreen: {0}", e.Message));
+                    string message = string.Format("SnowPlow: Exception thrown through windscreen: {0}", e.Message);
+                    Debug.Assert(false, message);
+                    logger.SendMessage(TestMessageLevel.Error, message);
                 }
             }
 
