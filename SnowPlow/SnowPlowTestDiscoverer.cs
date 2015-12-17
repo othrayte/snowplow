@@ -74,6 +74,8 @@ namespace SnowPlow
                         {
                             XmlAttribute nameAttribute = testNode.Attributes["name"];
                             XmlAttribute classnameAttribute = testNode.Attributes["classname"];
+                            XmlAttribute codefile = testNode.Attributes["file"];
+                            XmlAttribute linenumber = testNode.Attributes["linenumber"];
                             if (nameAttribute != null && !String.IsNullOrWhiteSpace(nameAttribute.Value))
                             {
                                 string name;
@@ -92,6 +94,17 @@ namespace SnowPlow
 
                                 var testCase = new TestCase(name, SnowPlowTestExecutor.ExecutorUri, source);
                                 testCase.DisplayName = displayName;
+
+                                if (codefile != null && !String.IsNullOrWhiteSpace(codefile.Value))
+                                {
+                                    testCase.CodeFilePath = codefile.Value;
+
+                                    uint number;
+                                    if (linenumber != null && uint.TryParse(linenumber.Value, out number))
+                                    {
+                                        testCase.LineNumber = (int)number;
+                                    }
+                                }
 
                                 tests.Add(testCase);
 
