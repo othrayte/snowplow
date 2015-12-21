@@ -71,84 +71,93 @@ namespace SnowPlow
                         continue;
                     }
 
-                    frameworkHandle.SendMessage(TestMessageLevel.Informational, string.Format("SnowPlow: Looking in {0}", source));
+                    frameworkHandle.SendMessage(TestMessageLevel.Informational, string.Format("SnowPlow: Plowing in {0}", source));
 
                     Dictionary<String, IglooResult> results = new Dictionary<string, IglooResult>();
 
                     // Start the process, Call WaitForExit and then the using statement will close.
-                    using (System.Diagnostics.Process unittestProcess = Process.forFile(file, settings))
+                    Process process = new Process(file, settings);
+
+                    if (runContext.IsBeingDebugged)
                     {
-
-                        string output = "";
-                        using (StreamReader reader = unittestProcess.StandardOutput)
+                        process.debugTests(frameworkHandle).WaitForExit();
+                    }
+                    else
+                    {
+                        using (System.Diagnostics.Process unittestProcess = process.executeTests())
                         {
-                            output = reader.ReadToEnd();
-                        }
-
-                        XmlDocument doc = new XmlDocument();
-                        doc.LoadXml(output);
-
-                        var testNodes = doc.SelectNodes("//testsuite/testcase");
-                        foreach (XmlNode testNode in testNodes)
-                        {
-                            XmlAttribute nameAttribute = testNode.Attributes["name"];
-                            XmlAttribute classnameAttribute = testNode.Attributes["classname"];
-                            if (nameAttribute != null && !String.IsNullOrWhiteSpace(nameAttribute.Value))
+                            string output = "";
+                            using (StreamReader reader = unittestProcess.StandardOutput)
                             {
-                                string name = nameAttribute.Value;
+                                output = reader.ReadToEnd();
+                            }
 
-                                if (classnameAttribute != null && !String.IsNullOrWhiteSpace(classnameAttribute.Value))
-                                {
-                                    name = classnameAttribute.Value + "::" + name;
-                                }
+                            XmlDocument doc = new XmlDocument();
+                            doc.LoadXml(output);
 
-                                IglooResult result = new IglooResult();
-                                XmlNode failureNode = testNode.SelectSingleNode("failure");
-                                if (failureNode == null)
+                            var testNodes = doc.SelectNodes("//testsuite/testcase");
+                            foreach (XmlNode testNode in testNodes)
+                            {
+                                XmlAttribute nameAttribute = testNode.Attributes["name"];
+                                XmlAttribute classnameAttribute = testNode.Attributes["classname"];
+                                if (nameAttribute != null && !String.IsNullOrWhiteSpace(nameAttribute.Value))
                                 {
-                                    // Success, yay
-                                    result.Outcome = TestOutcome.Passed;
-                                }
-                                else
-                                {
-                                    result.Outcome = TestOutcome.Failed;
-                                    XmlAttribute messageAttribute = failureNode.Attributes["message"];
-                                    string message = messageAttribute.Value;
+                                    string name = nameAttribute.Value;
 
-                                    // Need single line option to match the multiline error message
-                                    Regex r = new Regex(@"([^(]+)[ ]?\(([0-9]+)\): (.*)$", RegexOptions.Singleline);
-                                    Match m = r.Match(message);
-                                    if (m.Success)
+                                    if (classnameAttribute != null && !String.IsNullOrWhiteSpace(classnameAttribute.Value))
                                     {
-                                        result.File = m.Groups[1].Value;
-                                        result.LineNo = Convert.ToInt32(m.Groups[2].Value);
-                                        result.ErrorMessage = m.Groups[3].Value;
+                                        name = classnameAttribute.Value + "::" + name;
+                                    }
+
+                                    IglooResult result = new IglooResult();
+                                    XmlNode failureNode = testNode.SelectSingleNode("failure");
+                                    if (failureNode == null)
+                                    {
+                                        // Success, yay
+                                        result.Outcome = TestOutcome.Passed;
                                     }
                                     else
                                     {
-                                        result.ErrorMessage = message;
+                                        result.Outcome = TestOutcome.Failed;
+                                        XmlAttribute messageAttribute = failureNode.Attributes["message"];
+                                        string message = messageAttribute.Value;
+
+                                        // Need single line option to match the multiline error message
+                                        Regex r = new Regex(@"([^(]+)[ ]?\(([0-9]+)\): (.*)$", RegexOptions.Singleline);
+                                        Match m = r.Match(message);
+                                        if (m.Success)
+                                        {
+                                            result.File = m.Groups[1].Value;
+                                            result.LineNo = Convert.ToInt32(m.Groups[2].Value);
+                                            result.ErrorMessage = m.Groups[3].Value;
+                                        }
+                                        else
+                                        {
+                                            result.ErrorMessage = message;
+                                        }
                                     }
+                                    results[name] = result;
                                 }
-                                results[name] = result;
                             }
                         }
-                    }
-                    foreach (TestCase test in sources[source])
-                    {
-                        var testResult = new TestResult(test);
-                        if (results.ContainsKey(test.FullyQualifiedName))
+                        foreach (TestCase test in sources[source])
                         {
-                            IglooResult result = results[test.FullyQualifiedName];
-                            testResult.Outcome = result.Outcome;
-                            testResult.ErrorStackTrace = result.File + ":" + result.LineNo;
-                            testResult.ErrorMessage = result.ErrorMessage;
+                            var testResult = new TestResult(test);
+                            if (results.ContainsKey(test.FullyQualifiedName))
+                            {
+                                IglooResult result = results[test.FullyQualifiedName];
+                                testResult.Outcome = result.Outcome;
+                                testResult.ErrorStackTrace = result.File + ":" + result.LineNo;
+                                testResult.ErrorMessage = result.ErrorMessage;
+                            }
+                            else
+                            {
+                                testResult.Outcome = TestOutcome.NotFound;
+                            }
+                            frameworkHandle.RecordResult(testResult);
                         }
-                        else
-                        {
-                            testResult.Outcome = TestOutcome.NotFound;
-                        }
-                        frameworkHandle.RecordResult(testResult);
                     }
+
                 }
                 catch (Exception e)
                 {
