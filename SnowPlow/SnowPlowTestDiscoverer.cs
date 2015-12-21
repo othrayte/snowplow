@@ -55,7 +55,9 @@ namespace SnowPlow
                     // Start the process, Call WaitForExit and then the using statement will close.
                     using (System.Diagnostics.Process unittestProcess = process.listTests())
                     {
-                        testReader.read(source, unittestProcess.StandardOutput);
+                        string rawContent = unittestProcess.StandardOutput.ReadToEnd();
+
+                        testReader.read(source, XmlWasher.clean(rawContent));
 
                         int timeout = 10000;
                         unittestProcess.WaitForExit(timeout);

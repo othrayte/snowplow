@@ -81,7 +81,9 @@ namespace SnowPlow
                     {
                         using (System.Diagnostics.Process unittestProcess = process.executeTests())
                         {
-                            testReader.read(sources[source], unittestProcess.StandardOutput);
+                            string rawContent = unittestProcess.StandardOutput.ReadToEnd();
+
+                            testReader.read(sources[source], XmlWasher.clean(rawContent));
 
                             int timeout = 10000;
                             unittestProcess.WaitForExit(timeout);
