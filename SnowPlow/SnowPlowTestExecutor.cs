@@ -47,7 +47,6 @@ namespace SnowPlow
                     break;
                 }
 
-
                 try
                 {
 
@@ -86,58 +85,71 @@ namespace SnowPlow
                     {
                         using (System.Diagnostics.Process unittestProcess = process.executeTests())
                         {
-                            string output = "";
-                            using (StreamReader reader = unittestProcess.StandardOutput)
+                            using (XmlReader reader = XmlReader.Create(unittestProcess.StandardOutput))
                             {
-                                output = reader.ReadToEnd();
-                            }
+                                XmlDocument doc = new XmlDocument();
+                                doc.Load(reader);
 
-                            XmlDocument doc = new XmlDocument();
-                            doc.LoadXml(output);
-
-                            var testNodes = doc.SelectNodes("//testsuite/testcase");
-                            foreach (XmlNode testNode in testNodes)
-                            {
-                                XmlAttribute nameAttribute = testNode.Attributes["name"];
-                                XmlAttribute classnameAttribute = testNode.Attributes["classname"];
-                                if (nameAttribute != null && !String.IsNullOrWhiteSpace(nameAttribute.Value))
+                                var testNodes = doc.SelectNodes("//testsuite/testcase");
+                                foreach (XmlNode testNode in testNodes)
                                 {
-                                    string name = nameAttribute.Value;
-
-                                    if (classnameAttribute != null && !String.IsNullOrWhiteSpace(classnameAttribute.Value))
+                                    XmlAttribute nameAttribute = testNode.Attributes["name"];
+                                    XmlAttribute classnameAttribute = testNode.Attributes["classname"];
+                                    if (nameAttribute != null && !String.IsNullOrWhiteSpace(nameAttribute.Value))
                                     {
-                                        name = classnameAttribute.Value + "::" + name;
-                                    }
+                                        string name = nameAttribute.Value;
 
-                                    IglooResult result = new IglooResult();
-                                    XmlNode failureNode = testNode.SelectSingleNode("failure");
-                                    if (failureNode == null)
-                                    {
-                                        // Success, yay
-                                        result.Outcome = TestOutcome.Passed;
-                                    }
-                                    else
-                                    {
-                                        result.Outcome = TestOutcome.Failed;
-                                        XmlAttribute messageAttribute = failureNode.Attributes["message"];
-                                        string message = messageAttribute.Value;
-
-                                        // Need single line option to match the multiline error message
-                                        Regex r = new Regex(@"([^(]+)[ ]?\(([0-9]+)\): (.*)$", RegexOptions.Singleline);
-                                        Match m = r.Match(message);
-                                        if (m.Success)
+                                        if (classnameAttribute != null && !String.IsNullOrWhiteSpace(classnameAttribute.Value))
                                         {
-                                            result.File = m.Groups[1].Value;
-                                            result.LineNo = Convert.ToInt32(m.Groups[2].Value);
-                                            result.ErrorMessage = m.Groups[3].Value;
+                                            name = classnameAttribute.Value + "::" + name;
+                                        }
+
+                                        IglooResult result = new IglooResult();
+                                        XmlNode failureNode = testNode.SelectSingleNode("failure");
+                                        if (failureNode == null)
+                                        {
+                                            // Success, yay
+                                            result.Outcome = TestOutcome.Passed;
                                         }
                                         else
                                         {
-                                            result.ErrorMessage = message;
+                                            result.Outcome = TestOutcome.Failed;
+                                            XmlAttribute messageAttribute = failureNode.Attributes["message"];
+                                            string message = messageAttribute.Value;
+
+                                            // Need single line option to match the multiline error message
+                                            Regex r = new Regex(@"([^(]+)[ ]?\(([0-9]+)\): (.*)$", RegexOptions.Singleline);
+                                            Match m = r.Match(message);
+                                            if (m.Success)
+                                            {
+                                                result.File = m.Groups[1].Value;
+                                                result.LineNo = Convert.ToInt32(m.Groups[2].Value);
+                                                result.ErrorMessage = m.Groups[3].Value;
+                                            }
+                                            else
+                                            {
+                                                result.ErrorMessage = message;
+                                            }
                                         }
+                                        results[name] = result;
                                     }
-                                    results[name] = result;
                                 }
+                            }
+
+                            int timeout = 10000;
+                            unittestProcess.WaitForExit(timeout);
+
+                            if (!unittestProcess.HasExited)
+                            {
+                                unittestProcess.Kill();
+                                frameworkHandle.SendMessage(TestMessageLevel.Error, string.Format("SnowPlow: Ran out of time plowing tests in {0}, test process has been killed.", source));
+                                continue;
+                            }
+
+                            if (unittestProcess.ExitCode < 0)
+                            {
+                                frameworkHandle.SendMessage(TestMessageLevel.Error, string.Format("SnowPlow: Broke plow, {0} returned exit code {1}", source, unittestProcess.ExitCode));
+                                continue;
                             }
                         }
                         foreach (TestCase test in sources[source])

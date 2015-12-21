@@ -55,66 +55,72 @@ namespace SnowPlow
                     // Start the process, Call WaitForExit and then the using statement will close.
                     using (System.Diagnostics.Process unittestProcess = process.listTests())
                     {
-                        string output = "";
-                        using (StreamReader reader = unittestProcess.StandardOutput)
+                        using (XmlReader reader = XmlReader.Create(unittestProcess.StandardOutput))
                         {
-                            output = reader.ReadToEnd();
+                            XmlDocument doc = new XmlDocument();
+                            doc.Load(reader);
+
+                            var testNodes = doc.SelectNodes("//testsuite/testcase");
+                            foreach (XmlNode testNode in testNodes)
+                            {
+                                XmlAttribute nameAttribute = testNode.Attributes["name"];
+                                XmlAttribute classnameAttribute = testNode.Attributes["classname"];
+                                XmlAttribute codefile = testNode.Attributes["file"];
+                                XmlAttribute linenumber = testNode.Attributes["linenumber"];
+                                if (nameAttribute != null && !String.IsNullOrWhiteSpace(nameAttribute.Value))
+                                {
+                                    string name;
+                                    string displayName;
+
+                                    if (classnameAttribute != null && !String.IsNullOrWhiteSpace(classnameAttribute.Value))
+                                    {
+                                        name = IglooSpecNameFormatter.buildTestName(classnameAttribute.Value, nameAttribute.Value);
+                                        displayName = IglooSpecNameFormatter.buildDisplayName(classnameAttribute.Value, nameAttribute.Value);
+                                    }
+                                    else
+                                    {
+                                        name = IglooSpecNameFormatter.buildTestName(nameAttribute.Value);
+                                        displayName = IglooSpecNameFormatter.buildDisplayName(nameAttribute.Value);
+                                    }
+
+                                    var testCase = new TestCase(name, SnowPlowTestExecutor.ExecutorUri, source);
+                                    testCase.DisplayName = displayName;
+
+                                    if (codefile != null && !String.IsNullOrWhiteSpace(codefile.Value))
+                                    {
+                                        testCase.CodeFilePath = codefile.Value;
+
+                                        uint number;
+                                        if (linenumber != null && uint.TryParse(linenumber.Value, out number))
+                                        {
+                                            testCase.LineNumber = (int)number;
+                                        }
+                                    }
+
+                                    tests.Add(testCase);
+
+                                    if (discoverySink != null)
+                                    {
+                                        discoverySink.SendTestCase(testCase);
+                                    }
+                                }
+                            }
                         }
-                        if (unittestProcess.ExitCode < 0)
+
+                        int timeout = 10000;
+                        unittestProcess.WaitForExit(timeout);
+
+                        if (!unittestProcess.HasExited)
                         {
-                            logger.SendMessage(TestMessageLevel.Error, string.Format("SnowPlow: Broke plow, {0} returned exit code {1}", source, unittestProcess.ExitCode));
-                            logger.SendMessage(TestMessageLevel.Informational, string.Format("SnowPlow: {0}:{1} >>> {2} <<<", source, unittestProcess.ExitCode, output));
+                            unittestProcess.Kill();
+                            logger.SendMessage(TestMessageLevel.Error, string.Format("SnowPlow: Ran out of time plowing tests in {0}, test process has been killed.", source));
                             continue;
                         }
 
-                        XmlDocument doc = new XmlDocument();
-                        doc.LoadXml(output);
-
-                        var testNodes = doc.SelectNodes("//testsuite/testcase");
-                        foreach (XmlNode testNode in testNodes)
+                        if (unittestProcess.ExitCode < 0)
                         {
-                            XmlAttribute nameAttribute = testNode.Attributes["name"];
-                            XmlAttribute classnameAttribute = testNode.Attributes["classname"];
-                            XmlAttribute codefile = testNode.Attributes["file"];
-                            XmlAttribute linenumber = testNode.Attributes["linenumber"];
-                            if (nameAttribute != null && !String.IsNullOrWhiteSpace(nameAttribute.Value))
-                            {
-                                string name;
-                                string displayName;
-
-                                if (classnameAttribute != null && !String.IsNullOrWhiteSpace(classnameAttribute.Value))
-                                {
-                                    name = IglooSpecNameFormatter.buildTestName(classnameAttribute.Value, nameAttribute.Value);
-                                    displayName = IglooSpecNameFormatter.buildDisplayName(classnameAttribute.Value, nameAttribute.Value);
-                                }
-                                else
-                                {
-                                    name = IglooSpecNameFormatter.buildTestName(nameAttribute.Value);
-                                    displayName = IglooSpecNameFormatter.buildDisplayName(nameAttribute.Value);
-                                }
-
-                                var testCase = new TestCase(name, SnowPlowTestExecutor.ExecutorUri, source);
-                                testCase.DisplayName = displayName;
-
-                                if (codefile != null && !String.IsNullOrWhiteSpace(codefile.Value))
-                                {
-                                    testCase.CodeFilePath = codefile.Value;
-
-                                    uint number;
-                                    if (linenumber != null && uint.TryParse(linenumber.Value, out number))
-                                    {
-                                        testCase.LineNumber = (int)number;
-                                    }
-                                }
-
-                                tests.Add(testCase);
-
-                                if (discoverySink != null)
-                                {
-                                    discoverySink.SendTestCase(testCase);
-                                }
-
-                            }
+                            logger.SendMessage(TestMessageLevel.Error, string.Format("SnowPlow: Broke plow, {0} returned exit code {1}", source, unittestProcess.ExitCode));
+                            continue;
                         }
                     }
                 }
