@@ -5,8 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text.RegularExpressions;
-using System.Xml;
 
 namespace SnowPlow
 {
@@ -30,6 +28,7 @@ namespace SnowPlow
 
         public void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
+            XmlTestResultReader testReader = new XmlTestResultReader(frameworkHandle);
             m_cancelled = false;
 
             Dictionary<String, LinkedList<TestCase>> sources = new Dictionary<String, LinkedList<TestCase>>();
@@ -49,7 +48,6 @@ namespace SnowPlow
 
                 try
                 {
-
                     FileInfo file = new FileInfo(source);
                     if (!file.Exists)
                     {
@@ -72,8 +70,6 @@ namespace SnowPlow
 
                     frameworkHandle.SendMessage(TestMessageLevel.Informational, string.Format("SnowPlow: Plowing in {0}", source));
 
-                    Dictionary<String, IglooResult> results = new Dictionary<string, IglooResult>();
-
                     // Start the process, Call WaitForExit and then the using statement will close.
                     Process process = new Process(file, settings);
 
@@ -85,56 +81,7 @@ namespace SnowPlow
                     {
                         using (System.Diagnostics.Process unittestProcess = process.executeTests())
                         {
-                            using (XmlReader reader = XmlReader.Create(unittestProcess.StandardOutput))
-                            {
-                                XmlDocument doc = new XmlDocument();
-                                doc.Load(reader);
-
-                                var testNodes = doc.SelectNodes("//testsuite/testcase");
-                                foreach (XmlNode testNode in testNodes)
-                                {
-                                    XmlAttribute nameAttribute = testNode.Attributes["name"];
-                                    XmlAttribute classnameAttribute = testNode.Attributes["classname"];
-                                    if (nameAttribute != null && !String.IsNullOrWhiteSpace(nameAttribute.Value))
-                                    {
-                                        string name = nameAttribute.Value;
-
-                                        if (classnameAttribute != null && !String.IsNullOrWhiteSpace(classnameAttribute.Value))
-                                        {
-                                            name = classnameAttribute.Value + "::" + name;
-                                        }
-
-                                        IglooResult result = new IglooResult();
-                                        XmlNode failureNode = testNode.SelectSingleNode("failure");
-                                        if (failureNode == null)
-                                        {
-                                            // Success, yay
-                                            result.Outcome = TestOutcome.Passed;
-                                        }
-                                        else
-                                        {
-                                            result.Outcome = TestOutcome.Failed;
-                                            XmlAttribute messageAttribute = failureNode.Attributes["message"];
-                                            string message = messageAttribute.Value;
-
-                                            // Need single line option to match the multiline error message
-                                            Regex r = new Regex(@"([^(]+)[ ]?\(([0-9]+)\): (.*)$", RegexOptions.Singleline);
-                                            Match m = r.Match(message);
-                                            if (m.Success)
-                                            {
-                                                result.File = m.Groups[1].Value;
-                                                result.LineNo = Convert.ToInt32(m.Groups[2].Value);
-                                                result.ErrorMessage = m.Groups[3].Value;
-                                            }
-                                            else
-                                            {
-                                                result.ErrorMessage = message;
-                                            }
-                                        }
-                                        results[name] = result;
-                                    }
-                                }
-                            }
+                            testReader.read(sources[source], unittestProcess.StandardOutput);
 
                             int timeout = 10000;
                             unittestProcess.WaitForExit(timeout);
@@ -152,38 +99,15 @@ namespace SnowPlow
                                 continue;
                             }
                         }
-                        foreach (TestCase test in sources[source])
-                        {
-                            var testResult = new TestResult(test);
-                            if (results.ContainsKey(test.FullyQualifiedName))
-                            {
-                                IglooResult result = results[test.FullyQualifiedName];
-                                testResult.Outcome = result.Outcome;
-                                testResult.ErrorStackTrace = result.File + ":" + result.LineNo;
-                                testResult.ErrorMessage = result.ErrorMessage;
-                            }
-                            else
-                            {
-                                testResult.Outcome = TestOutcome.NotFound;
-                            }
-                            frameworkHandle.RecordResult(testResult);
-                        }
                     }
 
                 }
                 catch (Exception e)
                 {
                     // Log error.
-                    string message = string.Format("SnowPlow: Ran of the road. {0}", e.Message);
+                    string message = string.Format("SnowPlow: Ran of the road. {0}", e.ToString());
                     Debug.Assert(false, message);
                     frameworkHandle.SendMessage(TestMessageLevel.Error, message);
-                    foreach (TestCase test in sources[source])
-                    {
-                        var testResult = new TestResult(test);
-                        testResult.Outcome = TestOutcome.Skipped;
-                        testResult.ErrorMessage = "SnowPlow: Unable to perform unit test: " + e.Message;
-                        frameworkHandle.RecordResult(testResult);
-                    }
                 }
 
             }

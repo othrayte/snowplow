@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Xml;
 
 namespace SnowPlow
 {
@@ -23,7 +22,8 @@ namespace SnowPlow
 
         internal static IEnumerable<TestCase> GetTests(IEnumerable<string> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
         {
-            List<TestCase> tests = new List<TestCase>();
+            IglooSpecNameFormatter nameFormatter = new IglooSpecNameFormatter();
+            XmlTestCaseReader testReader = new XmlTestCaseReader(discoverySink);
 
             foreach (string source in sources)
             {
@@ -55,57 +55,7 @@ namespace SnowPlow
                     // Start the process, Call WaitForExit and then the using statement will close.
                     using (System.Diagnostics.Process unittestProcess = process.listTests())
                     {
-                        using (XmlReader reader = XmlReader.Create(unittestProcess.StandardOutput))
-                        {
-                            XmlDocument doc = new XmlDocument();
-                            doc.Load(reader);
-
-                            var testNodes = doc.SelectNodes("//testsuite/testcase");
-                            foreach (XmlNode testNode in testNodes)
-                            {
-                                XmlAttribute nameAttribute = testNode.Attributes["name"];
-                                XmlAttribute classnameAttribute = testNode.Attributes["classname"];
-                                XmlAttribute codefile = testNode.Attributes["file"];
-                                XmlAttribute linenumber = testNode.Attributes["linenumber"];
-                                if (nameAttribute != null && !String.IsNullOrWhiteSpace(nameAttribute.Value))
-                                {
-                                    string name;
-                                    string displayName;
-
-                                    if (classnameAttribute != null && !String.IsNullOrWhiteSpace(classnameAttribute.Value))
-                                    {
-                                        name = IglooSpecNameFormatter.buildTestName(classnameAttribute.Value, nameAttribute.Value);
-                                        displayName = IglooSpecNameFormatter.buildDisplayName(classnameAttribute.Value, nameAttribute.Value);
-                                    }
-                                    else
-                                    {
-                                        name = IglooSpecNameFormatter.buildTestName(nameAttribute.Value);
-                                        displayName = IglooSpecNameFormatter.buildDisplayName(nameAttribute.Value);
-                                    }
-
-                                    var testCase = new TestCase(name, SnowPlowTestExecutor.ExecutorUri, source);
-                                    testCase.DisplayName = displayName;
-
-                                    if (codefile != null && !String.IsNullOrWhiteSpace(codefile.Value))
-                                    {
-                                        testCase.CodeFilePath = codefile.Value;
-
-                                        uint number;
-                                        if (linenumber != null && uint.TryParse(linenumber.Value, out number))
-                                        {
-                                            testCase.LineNumber = (int)number;
-                                        }
-                                    }
-
-                                    tests.Add(testCase);
-
-                                    if (discoverySink != null)
-                                    {
-                                        discoverySink.SendTestCase(testCase);
-                                    }
-                                }
-                            }
-                        }
+                        testReader.read(source, unittestProcess.StandardOutput);
 
                         int timeout = 10000;
                         unittestProcess.WaitForExit(timeout);
@@ -127,13 +77,14 @@ namespace SnowPlow
                 catch (Exception e)
                 {
                     // Log error.
-                    string message = string.Format("SnowPlow: Exception thrown through windscreen: {0}", e.Message);
+                    string message = string.Format("SnowPlow: Exception thrown through windscreen: {0}", e.ToString());
                     Debug.Assert(false, message);
                     logger.SendMessage(TestMessageLevel.Error, message);
                 }
             }
 
-            return tests;
+            return testReader.TestCases;
         }
+
     }
 }
