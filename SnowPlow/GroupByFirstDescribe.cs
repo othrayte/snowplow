@@ -32,7 +32,8 @@ namespace SnowPlow
             return spec.Split(new string[] { "::" }, StringSplitOptions.RemoveEmptyEntries).First();
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1303:Do not pass literals as localized parameters", MessageId = "Microsoft.VisualStudio.TestWindow.Diagnostics.TimingLogger.#ctor(Microsoft.VisualStudio.TestWindow.Extensibility.ILogger,System.String,System.Boolean)")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA2204:Literals should be spelled correctly", MessageId = "GroupByFirstDescribe"),
+         System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1303:Do not pass literals as localized parameters", MessageId = "Microsoft.VisualStudio.TestWindow.Diagnostics.TimingLogger.#ctor(Microsoft.VisualStudio.TestWindow.Extensibility.ILogger,System.String,System.Boolean)")]
         public IEnumerable<object> Keys
         {
             get
