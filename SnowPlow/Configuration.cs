@@ -9,6 +9,7 @@ namespace SnowPlow
     [XmlRoot("Configuration")]
     public class Configuration
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         [XmlElement("Binary")]
         public List<Binary> Binaries { get; set; }
 
@@ -53,6 +54,7 @@ namespace SnowPlow
         [XmlAttribute("enable")]
         public bool Enable { get; set; }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         [XmlElement("EnvVar")]
         public List<EnvVar> EnvVars { get; set; }
     }

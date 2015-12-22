@@ -2,8 +2,9 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Added
 
-## [1.1.4.0] - 2015-12-23
+## [1.1.4.0] - 2015-12-22
 ### Added
  - More info link pointing to the github project.
 

@@ -37,6 +37,7 @@ namespace SnowPlow
             return spec.Split(new string[] { "::" }, StringSplitOptions.RemoveEmptyEntries).First();
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1303:Do not pass literals as localized parameters", MessageId = "Microsoft.VisualStudio.TestWindow.Diagnostics.TimingLogger.#ctor(Microsoft.VisualStudio.TestWindow.Extensibility.ILogger,System.String,System.Boolean)")]
         public IEnumerable<object> Keys
         {
             get
@@ -103,7 +104,7 @@ namespace SnowPlow
             {
                 return describe;
             }
-            return "Unknown";
+            return strings.UnknownDescribe;
 
         }
 
@@ -111,7 +112,7 @@ namespace SnowPlow
         {
             get
             {
-                return "Root Describe";
+                return strings.RootDescribe;
             }
         }
 

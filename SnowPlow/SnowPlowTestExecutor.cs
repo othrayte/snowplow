@@ -51,24 +51,24 @@ namespace SnowPlow
                     FileInfo file = new FileInfo(source);
                     if (!file.Exists)
                     {
-                        frameworkHandle.SendMessage(TestMessageLevel.Warning, string.Format("SnowPlow: Asked to plow unknown file {0}", source));
+                        frameworkHandle.SendMessage(TestMessageLevel.Warning, strings.SnowPlow_ + string.Format(strings.UnknownFileX, source));
                     }
 
                     Binary settings = Configuration.FindConfiguration(file);
 
                     if (settings == null)
                     {
-                        frameworkHandle.SendMessage(TestMessageLevel.Informational, string.Format("SnowPlow: Skipping source {0}, not listed in a plow definition", source));
+                        frameworkHandle.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(strings.SkipXNotListed, source));
                         continue;
                     }
 
                     if (!settings.Enable)
                     {
-                        frameworkHandle.SendMessage(TestMessageLevel.Informational, string.Format("SnowPlow: Skipping source {0}, disabled in plow definition", source));
+                        frameworkHandle.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(strings.SkipXDisabled, source));
                         continue;
                     }
 
-                    frameworkHandle.SendMessage(TestMessageLevel.Informational, string.Format("SnowPlow: Plowing in {0}", source));
+                    frameworkHandle.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(strings.PlowingInX, source));
 
                     // Start the process, Call WaitForExit and then the using statement will close.
                     Process process = new Process(file, settings);
@@ -91,13 +91,13 @@ namespace SnowPlow
                             if (!unittestProcess.HasExited)
                             {
                                 unittestProcess.Kill();
-                                frameworkHandle.SendMessage(TestMessageLevel.Error, string.Format("SnowPlow: Ran out of time plowing tests in {0}, test process has been killed.", source));
+                                frameworkHandle.SendMessage(TestMessageLevel.Error, strings.SnowPlow_ + string.Format(strings.TimoutInX, source));
                                 continue;
                             }
 
                             if (unittestProcess.ExitCode < 0)
                             {
-                                frameworkHandle.SendMessage(TestMessageLevel.Error, string.Format("SnowPlow: Broke plow, {0} returned exit code {1}", source, unittestProcess.ExitCode));
+                                frameworkHandle.SendMessage(TestMessageLevel.Error, strings.SnowPlow_ + string.Format(strings.XReturnedErrorCodeY, source, unittestProcess.ExitCode));
                                 continue;
                             }
                         }
@@ -107,7 +107,7 @@ namespace SnowPlow
                 catch (Exception e)
                 {
                     // Log error.
-                    string message = string.Format("SnowPlow: Ran of the road. {0}", e.ToString());
+                    string message = strings.SnowPlow_ + string.Format(strings.ExceptionThrownMsg, e.ToString());
                     Debug.Assert(false, message);
                     frameworkHandle.SendMessage(TestMessageLevel.Error, message);
                 }

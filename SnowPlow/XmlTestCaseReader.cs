@@ -9,7 +9,7 @@ namespace SnowPlow
     public class XmlTestCaseReader
     {
         private ITestCaseDiscoverySink testCaseSink;
-        public List<TestCase> TestCases { get; set; }
+        public List<TestCase> TestCases { get; private set; }
 
         public XmlTestCaseReader(ITestCaseDiscoverySink testCaseSink)
         {
