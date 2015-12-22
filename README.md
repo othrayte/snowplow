@@ -7,17 +7,17 @@ In theory it should would with bandit, however that has not been tested.
 
 ### Out of the box
  ☑ Display unit test as success or fail in the Unit Test Explorer  
- ☑ Display error messages and location in the code where the assert occured  
+ ☑ Display error messages and location in the code where the assert occurred  
  ☑ Debug unit tests by right clicking on them in the Unit Test Explorer  
- ☑ Enabling / disabling unit test containters (.exe files) using configuration files  
- ☑ Customise enviroments for each unit test container with support for expanding enviroment variables (allows for PATH modifications)  
+ ☑ Enabling / disabling unit test containers (.exe files) using configuration files  
+ ☑ Customise environments for each unit test container with support for expanding environment variables (allows for PATH modifications)  
  ☑ Group unit tests by the root level context/describe  
  ☑ Replace '::' and '_' in unit tests with spaces for better readability  
 
 ### Feature that require extensions to igloo
  ☑ Double click on a unit test to open it  
  ☑ Group unit tests by project  
- ☐ Run/debug indervidual unit tests (limited by present capabilities of igloo)  
+ ☐ Run/debug individual unit tests (limited by present capabilities of igloo)  
 
 ## Icon
 
