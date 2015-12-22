@@ -1,7 +1,7 @@
 ﻿
 namespace SnowPlow
 {
-    public class IglooSpecNameFormatter
+    public static class IglooSpecNameFormatter
     {
         public static string buildDisplayName(string className, string name)
         {

@@ -2,7 +2,7 @@
 
 namespace SnowPlow
 {
-    class XmlWasher
+    public static class XmlWasher
     {
         public static string clean(string content)
         {

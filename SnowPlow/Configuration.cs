@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Xml.Serialization;
 
 namespace SnowPlow
@@ -13,28 +14,34 @@ namespace SnowPlow
         [XmlElement("Binary")]
         public List<Binary> Binaries { get; set; }
 
-        public static Binary FindConfiguration(FileInfo file)
+        public bool HasConfigurationFor(string testContainer)
+        {
+            return Binaries.Any(binary => binary.File.Equals(testContainer, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public Binary ConfigurationFor(string testContainer)
+        {
+            return Binaries.First(binary => binary.File.Equals(testContainer, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public static Configuration Load(FileInfo file)
         {
             XmlSerializer serializer = new XmlSerializer(typeof(Configuration));
-            DirectoryInfo directory = file.Directory;
+            return (Configuration)serializer.Deserialize(file.OpenText());
+        }
+
+        public static Binary FindConfiguration(FileInfo file)
+        {
             do
             {
-                foreach (FileInfo plowFile in directory.EnumerateFiles("*.plow.user"))
+                string[] extensions = { "*.plow.user", "*.plow" };
+                foreach (string extension in extensions)
                 {
-                    using (StreamReader stream = plowFile.OpenText())
+                    foreach (FileInfo plowFile in directory.EnumerateFiles(extension))
                     {
-                        Configuration config = (Configuration)serializer.Deserialize(stream);
-                        Binary settings = config.Binaries.Find(binary => binary.File.Equals(file.Name, StringComparison.OrdinalIgnoreCase));
-                        if (settings != null) return settings;
-                    }
-                }
-                foreach (FileInfo plowFile in directory.EnumerateFiles("*.plow"))
-                {
-                    using (StreamReader stream = plowFile.OpenText())
-                    {
-                        Configuration config = (Configuration)serializer.Deserialize(stream);
-                        Binary settings = config.Binaries.Find(binary => binary.File.Equals(file.Name, StringComparison.OrdinalIgnoreCase));
-                        if (settings != null) return settings;
+                        Configuration config = Load(plowFile);
+                        if (config.HasConfigurationFor(file.Name))
+                            return config.ConfigurationFor(file.Name);
                     }
                 }
                 directory = directory.Parent;
@@ -43,7 +50,6 @@ namespace SnowPlow
             return null;
         }
     }
-
 
     [Serializable()]
     public class Binary

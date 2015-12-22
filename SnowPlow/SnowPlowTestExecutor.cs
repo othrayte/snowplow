@@ -20,12 +20,13 @@ namespace SnowPlow
 
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            IEnumerable<TestCase> tests = SnowPlowTestDiscoverer.GetTests(sources, runContext, frameworkHandle, null);
+            IEnumerable<TestCase> tests = SnowPlowTestDiscoverer.GetTests(sources, frameworkHandle, null);
 
             RunTests(tests, runContext, frameworkHandle);
 
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         public void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
             XmlTestResultReader testReader = new XmlTestResultReader(frameworkHandle);

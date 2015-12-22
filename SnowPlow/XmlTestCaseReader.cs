@@ -9,12 +9,14 @@ namespace SnowPlow
     public class XmlTestCaseReader
     {
         private ITestCaseDiscoverySink testCaseSink;
-        public List<TestCase> TestCases { get; private set; }
+
+        public IEnumerable<TestCase> TestCases { get { return _testCases; } }
+        private List<TestCase> _testCases;
 
         public XmlTestCaseReader(ITestCaseDiscoverySink testCaseSink)
         {
             this.testCaseSink = testCaseSink;
-            TestCases = new List<TestCase>();
+            _testCases = new List<TestCase>();
         }
 
         public void read(string testSource, string content)
@@ -59,7 +61,7 @@ namespace SnowPlow
                         }
                     }
 
-                    TestCases.Add(testCase);
+                    _testCases.Add(testCase);
                     if (testCaseSink != null) // The sink will be null when test discovery is called as part of test execution.
                     {
                         testCaseSink.SendTestCase(testCase);

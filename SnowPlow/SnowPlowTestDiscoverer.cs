@@ -16,11 +16,12 @@ namespace SnowPlow
         public void DiscoverTests(IEnumerable<string> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
         {
             logger.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(strings.LookingForSnowN, sources.Count()));
-            GetTests(sources, discoveryContext, logger, discoverySink);
+            GetTests(sources, logger, discoverySink);
             logger.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + strings.FinishedLooking);
         }
 
-        internal static IEnumerable<TestCase> GetTests(IEnumerable<string> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
+        internal static IEnumerable<TestCase> GetTests(IEnumerable<string> sources, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
         {
             XmlTestCaseReader testReader = new XmlTestCaseReader(discoverySink);
 

@@ -14,14 +14,9 @@ namespace SnowPlow
     [Export]
     public sealed class GroupByFirstDescribe : IGroupByProvider<string>
     {
-        private static readonly string noDescribeKey;
+        private static readonly string noDescribeKey = string.Empty;
         private ILogger logger;
         private IUnitTestStorage unitTestStorage;
-
-        static GroupByFirstDescribe()
-        {
-            noDescribeKey = string.Empty;
-        }
 
         [ImportingConstructor]
         public GroupByFirstDescribe(IUnitTestStorage unitTestStorage, ILogger logger)
