@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.4.0] - 2015-12-23
+### Added
+ - More info link pointing to the github project.
+
 ## [1.1.3.0] - 2015-12-22
 ### Changed
  - pdb files removed from VSIX when building in release.
