@@ -8,7 +8,7 @@ namespace SnowPlow
 {
     [System.Serializable()]
     [XmlRoot("Configuration")]
-    public class Configuration
+    public class PlowConfiguration
     {
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         [XmlElement("Binary")]
@@ -24,12 +24,12 @@ namespace SnowPlow
             return Containers.First(container => container.File.Equals(testContainer, System.StringComparison.OrdinalIgnoreCase));
         }
 
-        public static Configuration Load(FileInfo file)
+        public static PlowConfiguration Load(FileInfo file)
         {
             Ensure.That(() => file).IsNotNull();
 
-            XmlSerializer serializer = new XmlSerializer(typeof(Configuration));
-            return (Configuration)serializer.Deserialize(file.OpenText());
+            XmlSerializer serializer = new XmlSerializer(typeof(PlowConfiguration));
+            return (PlowConfiguration)serializer.Deserialize(file.OpenText());
         }
 
         public static Container FindConfiguration(FileInfo testContainer)
@@ -44,7 +44,7 @@ namespace SnowPlow
                 {
                     foreach (FileInfo plowFile in directory.EnumerateFiles(extension))
                     {
-                        Configuration config = Load(plowFile);
+                        PlowConfiguration config = Load(plowFile);
                         if (config.HasConfigurationFor(testContainer.Name))
                             return config.ConfigurationFor(testContainer.Name);
                     }

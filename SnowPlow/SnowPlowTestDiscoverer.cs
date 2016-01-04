@@ -38,7 +38,7 @@ namespace SnowPlow
                         logger.SendMessage(TestMessageLevel.Warning, strings.SnowPlow_ + string.Format(strings.UnknownFileX, source));
                     }
 
-                    Container settings = Configuration.FindConfiguration(file);
+                    Container settings = PlowConfiguration.FindConfiguration(file);
 
                     if (settings == null)
                     {

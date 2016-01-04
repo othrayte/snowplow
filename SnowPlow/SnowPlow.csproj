@@ -40,7 +40,7 @@
     <WarningLevel>4</WarningLevel>
     <IncludeDebugSymbolsInVSIXContainer>true</IncludeDebugSymbolsInVSIXContainer>
     <RunCodeAnalysis>true</RunCodeAnalysis>
-    <CodeAnalysisRuleSet>ExtendedDesignGuidelineRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -81,7 +81,7 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="GroupByFirstDescribe.cs" />
     <Compile Include="IglooResult.cs" />
-    <Compile Include="Configuration.cs" />
+    <Compile Include="PlowConfiguration.cs" />
     <Compile Include="IglooSpecNameFormatter.cs" />
     <Compile Include="Process.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
