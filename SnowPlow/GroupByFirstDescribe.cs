@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestPlatform.ObjectModel;
+﻿using EnsureThat;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestWindow.Data;
 using Microsoft.VisualStudio.TestWindow.Diagnostics;
 using Microsoft.VisualStudio.TestWindow.Extensibility;
@@ -29,6 +30,7 @@ namespace SnowPlow
 
         public static string ExtractDescribe(string spec)
         {
+            Ensure.That(() => spec).IsNotNullOrWhiteSpace();
             return spec.Split(new string[] { "::" }, StringSplitOptions.RemoveEmptyEntries).First();
         }
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
+﻿using EnsureThat;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -11,10 +12,10 @@ namespace SnowPlow
     public class Process
     {
         FileInfo File { get; set; }
-        Binary Settings { get; set; }
+        Container Settings { get; set; }
         List<String> Arguments { get; set; }
 
-        public Process(FileInfo file, Binary settings)
+        public Process(FileInfo file, Container settings)
         {
             File = file;
             Settings = settings;
@@ -34,7 +35,7 @@ namespace SnowPlow
             startInfo.Arguments = string.Join(" ", Arguments);
 
             // Add modified env vars
-            foreach (EnvVar var in Settings.EnvVars)
+            foreach (EnvironmentVariable var in Settings.EnvironmentVariables)
             {
                 if (startInfo.EnvironmentVariables.ContainsKey(var.Name))
                 {
@@ -45,20 +46,22 @@ namespace SnowPlow
             return startInfo;
         }
 
-        public System.Diagnostics.Process listTests()
+        public System.Diagnostics.Process ListTests()
         {
             ProcessStartInfo info = StartInfo();
             info.Arguments += " --list";
             return System.Diagnostics.Process.Start(info);
         }
 
-        public System.Diagnostics.Process executeTests()
+        public System.Diagnostics.Process ExecuteTests()
         {
             return System.Diagnostics.Process.Start(StartInfo());
         }
 
-        public System.Diagnostics.Process debugTests(IFrameworkHandle frameworkHandle)
+        public System.Diagnostics.Process DebugTests(IFrameworkHandle frameworkHandle)
         {
+            Ensure.That(() => frameworkHandle).IsNotNull();
+
             ProcessStartInfo info = StartInfo();
             Dictionary<string, string> environment =
                 info.EnvironmentVariables.Cast<DictionaryEntry>().ToDictionary(

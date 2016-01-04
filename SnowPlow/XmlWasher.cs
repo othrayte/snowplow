@@ -4,7 +4,7 @@ namespace SnowPlow
 {
     public static class XmlWasher
     {
-        public static string clean(string content)
+        public static string Clean(string content)
         {
             Regex r = new Regex(@"(<\?xml.*>)", RegexOptions.Singleline);
             Match m = r.Match(content);

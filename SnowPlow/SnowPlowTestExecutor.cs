@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestPlatform.ObjectModel;
+using EnsureThat;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using System;
@@ -26,10 +27,77 @@ namespace SnowPlow
 
         }
 
+        private void RunTests(String source, IEnumerable<TestCase> tests, IFrameworkHandle frameworkHandle, IRunContext runContext)
+        {
+            if (m_cancelled)
+            {
+                return;
+            }
+
+            FileInfo file = new FileInfo(source);
+            if (!file.Exists)
+            {
+                frameworkHandle.SendMessage(TestMessageLevel.Warning, strings.SnowPlow_ + string.Format(strings.UnknownFileX, source));
+            }
+
+            Container settings = Configuration.FindConfiguration(file);
+
+            if (settings == null)
+            {
+                frameworkHandle.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(strings.SkipXNotListed, source));
+                return;
+            }
+
+            if (!settings.Enable)
+            {
+                frameworkHandle.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(strings.SkipXDisabled, source));
+                return;
+            }
+
+            frameworkHandle.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(strings.PlowingInX, source));
+
+            // Start the process, Call WaitForExit and then the using statement will close.
+            Process process = new Process(file, settings);
+
+            if (runContext.IsBeingDebugged)
+            {
+                process.DebugTests(frameworkHandle).WaitForExit();
+            }
+            else
+            {
+                using (System.Diagnostics.Process unittestProcess = process.ExecuteTests())
+                {
+                    string rawContent = unittestProcess.StandardOutput.ReadToEnd();
+
+                    XmlTestResultReader testReader = new XmlTestResultReader(frameworkHandle);
+                    testReader.read(tests, XmlWasher.Clean(rawContent));
+
+                    int timeout = 10000;
+                    unittestProcess.WaitForExit(timeout);
+
+                    if (!unittestProcess.HasExited)
+                    {
+                        unittestProcess.Kill();
+                        frameworkHandle.SendMessage(TestMessageLevel.Error, strings.SnowPlow_ + string.Format(strings.TimoutInX, source));
+                        return;
+                    }
+
+                    if (unittestProcess.ExitCode < 0)
+                    {
+                        frameworkHandle.SendMessage(TestMessageLevel.Error, strings.SnowPlow_ + string.Format(strings.XReturnedErrorCodeY, source, unittestProcess.ExitCode));
+                        return;
+                    }
+                }
+            }
+        }
+
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         public void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            XmlTestResultReader testReader = new XmlTestResultReader(frameworkHandle);
+            Ensure.That(() => tests).IsNotNull();
+            Ensure.That(() => runContext).IsNotNull();
+            Ensure.That(() => frameworkHandle).IsNotNull();
+
             m_cancelled = false;
 
             Dictionary<String, LinkedList<TestCase>> sources = new Dictionary<String, LinkedList<TestCase>>();
@@ -42,68 +110,9 @@ namespace SnowPlow
 
             foreach (String source in sources.Keys)
             {
-                if (m_cancelled)
-                {
-                    break;
-                }
-
                 try
                 {
-                    FileInfo file = new FileInfo(source);
-                    if (!file.Exists)
-                    {
-                        frameworkHandle.SendMessage(TestMessageLevel.Warning, strings.SnowPlow_ + string.Format(strings.UnknownFileX, source));
-                    }
-
-                    Binary settings = Configuration.FindConfiguration(file);
-
-                    if (settings == null)
-                    {
-                        frameworkHandle.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(strings.SkipXNotListed, source));
-                        continue;
-                    }
-
-                    if (!settings.Enable)
-                    {
-                        frameworkHandle.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(strings.SkipXDisabled, source));
-                        continue;
-                    }
-
-                    frameworkHandle.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(strings.PlowingInX, source));
-
-                    // Start the process, Call WaitForExit and then the using statement will close.
-                    Process process = new Process(file, settings);
-
-                    if (runContext.IsBeingDebugged)
-                    {
-                        process.debugTests(frameworkHandle).WaitForExit();
-                    }
-                    else
-                    {
-                        using (System.Diagnostics.Process unittestProcess = process.executeTests())
-                        {
-                            string rawContent = unittestProcess.StandardOutput.ReadToEnd();
-
-                            testReader.read(sources[source], XmlWasher.clean(rawContent));
-
-                            int timeout = 10000;
-                            unittestProcess.WaitForExit(timeout);
-
-                            if (!unittestProcess.HasExited)
-                            {
-                                unittestProcess.Kill();
-                                frameworkHandle.SendMessage(TestMessageLevel.Error, strings.SnowPlow_ + string.Format(strings.TimoutInX, source));
-                                continue;
-                            }
-
-                            if (unittestProcess.ExitCode < 0)
-                            {
-                                frameworkHandle.SendMessage(TestMessageLevel.Error, strings.SnowPlow_ + string.Format(strings.XReturnedErrorCodeY, source, unittestProcess.ExitCode));
-                                continue;
-                            }
-                        }
-                    }
-
+                    RunTests(source, sources[source], frameworkHandle, runContext);
                 }
                 catch (Exception e)
                 {

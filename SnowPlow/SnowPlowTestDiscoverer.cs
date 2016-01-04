@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestPlatform.ObjectModel;
+﻿using EnsureThat;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using System;
@@ -15,6 +16,8 @@ namespace SnowPlow
     {
         public void DiscoverTests(IEnumerable<string> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
         {
+            Ensure.That(() => logger).IsNotNull();
+
             logger.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(strings.LookingForSnowN, sources.Count()));
             GetTests(sources, logger, discoverySink);
             logger.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + strings.FinishedLooking);
@@ -35,7 +38,7 @@ namespace SnowPlow
                         logger.SendMessage(TestMessageLevel.Warning, strings.SnowPlow_ + string.Format(strings.UnknownFileX, source));
                     }
 
-                    Binary settings = Configuration.FindConfiguration(file);
+                    Container settings = Configuration.FindConfiguration(file);
 
                     if (settings == null)
                     {
@@ -53,11 +56,11 @@ namespace SnowPlow
 
                     Process process = new Process(file, settings);
                     // Start the process, Call WaitForExit and then the using statement will close.
-                    using (System.Diagnostics.Process unittestProcess = process.listTests())
+                    using (System.Diagnostics.Process unittestProcess = process.ListTests())
                     {
                         string rawContent = unittestProcess.StandardOutput.ReadToEnd();
 
-                        testReader.read(source, XmlWasher.clean(rawContent));
+                        testReader.Read(source, XmlWasher.Clean(rawContent));
 
                         int timeout = 10000;
                         unittestProcess.WaitForExit(timeout);

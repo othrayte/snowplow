@@ -19,7 +19,7 @@ namespace SnowPlow
             _testCases = new List<TestCase>();
         }
 
-        public void read(string testSource, string content)
+        public void Read(string testSource, string content)
         {
             XmlDocument doc = new XmlDocument();
             doc.LoadXml(content);
@@ -38,13 +38,13 @@ namespace SnowPlow
 
                     if (classnameAttribute != null && !String.IsNullOrWhiteSpace(classnameAttribute.Value))
                     {
-                        name = IglooSpecNameFormatter.buildTestName(classnameAttribute.Value, nameAttribute.Value);
-                        displayName = IglooSpecNameFormatter.buildDisplayName(classnameAttribute.Value, nameAttribute.Value);
+                        name = IglooSpecNameFormatter.BuildTestName(classnameAttribute.Value, nameAttribute.Value);
+                        displayName = IglooSpecNameFormatter.BuildDisplayName(classnameAttribute.Value, nameAttribute.Value);
                     }
                     else
                     {
-                        name = IglooSpecNameFormatter.buildTestName(nameAttribute.Value);
-                        displayName = IglooSpecNameFormatter.buildDisplayName(nameAttribute.Value);
+                        name = IglooSpecNameFormatter.BuildTestName(nameAttribute.Value);
+                        displayName = IglooSpecNameFormatter.BuildDisplayName(nameAttribute.Value);
                     }
 
                     var testCase = new TestCase(name, SnowPlowTestExecutor.ExecutorUri, testSource);
