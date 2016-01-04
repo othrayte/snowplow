@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 
 namespace SnowPlow
@@ -37,24 +38,24 @@ namespace SnowPlow
             FileInfo file = new FileInfo(source);
             if (!file.Exists)
             {
-                frameworkHandle.SendMessage(TestMessageLevel.Warning, strings.SnowPlow_ + string.Format(strings.UnknownFileX, source));
+                frameworkHandle.SendMessage(TestMessageLevel.Warning, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.UnknownFileX, source));
             }
 
             Container settings = PlowConfiguration.FindConfiguration(file);
 
             if (settings == null)
             {
-                frameworkHandle.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(strings.SkipXNotListed, source));
+                frameworkHandle.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.SkipXNotListed, source));
                 return;
             }
 
             if (!settings.Enable)
             {
-                frameworkHandle.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(strings.SkipXDisabled, source));
+                frameworkHandle.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.SkipXDisabled, source));
                 return;
             }
 
-            frameworkHandle.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(strings.PlowingInX, source));
+            frameworkHandle.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.PlowingInX, source));
 
             // Start the process, Call WaitForExit and then the using statement will close.
             Process process = new Process(file, settings);
@@ -78,13 +79,13 @@ namespace SnowPlow
                     if (!unittestProcess.HasExited)
                     {
                         unittestProcess.Kill();
-                        frameworkHandle.SendMessage(TestMessageLevel.Error, strings.SnowPlow_ + string.Format(strings.TimoutInX, source));
+                        frameworkHandle.SendMessage(TestMessageLevel.Error, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.TimoutInX, source));
                         return;
                     }
 
                     if (unittestProcess.ExitCode < 0)
                     {
-                        frameworkHandle.SendMessage(TestMessageLevel.Error, strings.SnowPlow_ + string.Format(strings.XReturnedErrorCodeY, source, unittestProcess.ExitCode));
+                        frameworkHandle.SendMessage(TestMessageLevel.Error, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.XReturnedErrorCodeY, source, unittestProcess.ExitCode));
                         return;
                     }
                 }
@@ -117,7 +118,7 @@ namespace SnowPlow
                 catch (Exception e)
                 {
                     // Log error.
-                    string message = strings.SnowPlow_ + string.Format(strings.ExceptionThrownMsg, e.ToString());
+                    string message = strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.ExceptionThrownMsg, e.ToString());
                     Debug.Assert(false, message);
                     frameworkHandle.SendMessage(TestMessageLevel.Error, message);
                 }

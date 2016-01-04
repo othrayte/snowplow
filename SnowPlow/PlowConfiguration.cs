@@ -10,6 +10,7 @@ namespace SnowPlow
     [XmlRoot("Configuration")]
     public class PlowConfiguration
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1002:DoNotExposeGenericLists")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         [XmlElement("Binary")]
         public List<Container> Containers { get; set; }
@@ -65,6 +66,7 @@ namespace SnowPlow
         [XmlAttribute("enable")]
         public bool Enable { get; set; }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1002:DoNotExposeGenericLists")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         [XmlElement("EnvVar")]
         public List<EnvironmentVariable> EnvironmentVariables { get; set; }

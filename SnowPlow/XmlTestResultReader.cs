@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Xml;
 
@@ -58,7 +59,7 @@ namespace SnowPlow
                             if (m.Success)
                             {
                                 result.File = m.Groups[1].Value;
-                                result.LineNo = Convert.ToInt32(m.Groups[2].Value);
+                                result.LineNo = Convert.ToInt32(m.Groups[2].Value, CultureInfo.InvariantCulture);
                                 result.ErrorMessage = m.Groups[3].Value;
                             }
                             else

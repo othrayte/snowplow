@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -18,7 +19,7 @@ namespace SnowPlow
         {
             Ensure.That(() => logger).IsNotNull();
 
-            logger.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(strings.LookingForSnowN, sources.Count()));
+            logger.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.LookingForSnowN, sources.Count()));
             GetTests(sources, logger, discoverySink);
             logger.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + strings.FinishedLooking);
         }
@@ -35,24 +36,24 @@ namespace SnowPlow
                     FileInfo file = new FileInfo(source);
                     if (!file.Exists)
                     {
-                        logger.SendMessage(TestMessageLevel.Warning, strings.SnowPlow_ + string.Format(strings.UnknownFileX, source));
+                        logger.SendMessage(TestMessageLevel.Warning, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.UnknownFileX, source));
                     }
 
                     Container settings = PlowConfiguration.FindConfiguration(file);
 
                     if (settings == null)
                     {
-                        logger.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(strings.SkipXNotListed, source));
+                        logger.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.SkipXNotListed, source));
                         continue;
                     }
 
                     if (!settings.Enable)
                     {
-                        logger.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(strings.SkipXDisabled, source));
+                        logger.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.SkipXDisabled, source));
                         continue;
                     }
 
-                    logger.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(strings.LookingInX, source));
+                    logger.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.LookingInX, source));
 
                     Process process = new Process(file, settings);
                     // Start the process, Call WaitForExit and then the using statement will close.
@@ -68,13 +69,13 @@ namespace SnowPlow
                         if (!unittestProcess.HasExited)
                         {
                             unittestProcess.Kill();
-                            logger.SendMessage(TestMessageLevel.Error, strings.SnowPlow_ + string.Format(strings.TimoutInX, source));
+                            logger.SendMessage(TestMessageLevel.Error, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.TimoutInX, source));
                             continue;
                         }
 
                         if (unittestProcess.ExitCode < 0)
                         {
-                            logger.SendMessage(TestMessageLevel.Error, strings.SnowPlow_ + string.Format(strings.XReturnedErrorCodeY, source, unittestProcess.ExitCode));
+                            logger.SendMessage(TestMessageLevel.Error, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.XReturnedErrorCodeY, source, unittestProcess.ExitCode));
                             continue;
                         }
                     }
@@ -82,7 +83,7 @@ namespace SnowPlow
                 catch (Exception e)
                 {
                     // Log error.
-                    string message = strings.SnowPlow_ + string.Format(strings.ExceptionThrownMsg, e.ToString());
+                    string message = strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.ExceptionThrownMsg, e.ToString());
                     Debug.Assert(false, message);
                     logger.SendMessage(TestMessageLevel.Error, message);
                 }
