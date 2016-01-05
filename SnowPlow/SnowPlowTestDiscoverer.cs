@@ -4,8 +4,6 @@ using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -17,16 +15,16 @@ namespace SnowPlow
     {
         public void DiscoverTests(IEnumerable<string> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
         {
-            Ensure.That(() => logger).IsNotNull();
-
-            logger.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.LookingForSnowN, sources.Count()));
-            GetTests(sources, logger, discoverySink);
-            logger.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + strings.FinishedLooking);
+            GetTests(sources, new Logger(logger), discoverySink);
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
-        internal static IEnumerable<TestCase> GetTests(IEnumerable<string> sources, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
+        internal static IEnumerable<TestCase> GetTests(IEnumerable<string> sources, Logger logger, ITestCaseDiscoverySink discoverySink)
         {
+            Ensure.That(() => logger).IsNotNull();
+
+            logger.WriteInformation(strings.LookingForSnowN, sources.Count());
+            
             XmlTestCaseReader testReader = new XmlTestCaseReader(discoverySink);
 
             foreach (string source in sources)
@@ -36,24 +34,24 @@ namespace SnowPlow
                     FileInfo file = new FileInfo(source);
                     if (!file.Exists)
                     {
-                        logger.SendMessage(TestMessageLevel.Warning, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.UnknownFileX, source));
+                        logger.WriteWarning(strings.UnknownFileX, source);
                     }
 
                     Container settings = PlowConfiguration.FindConfiguration(file);
 
                     if (settings == null)
                     {
-                        logger.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.SkipXNotListed, source));
+                        logger.WriteWarning(strings.SkipXNotListed, source);
                         continue;
                     }
 
                     if (!settings.Enable)
                     {
-                        logger.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.SkipXDisabled, source));
+                        logger.WriteWarning(strings.SkipXDisabled, source);
                         continue;
                     }
 
-                    logger.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.LookingInX, source));
+                    logger.WriteInformation(strings.LookingInX, source);
 
                     Process process = new Process(file, settings);
                     // Start the process, Call WaitForExit and then the using statement will close.
@@ -69,25 +67,25 @@ namespace SnowPlow
                         if (!unittestProcess.HasExited)
                         {
                             unittestProcess.Kill();
-                            logger.SendMessage(TestMessageLevel.Error, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.TimoutInX, source));
+                            logger.WriteError(strings.TimoutInX, source);
                             continue;
                         }
 
                         if (unittestProcess.ExitCode < 0)
                         {
-                            logger.SendMessage(TestMessageLevel.Error, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.XReturnedErrorCodeY, source, unittestProcess.ExitCode));
+                            logger.WriteError(strings.XReturnedErrorCodeY, source, unittestProcess.ExitCode);
                             continue;
                         }
                     }
                 }
-                catch (Exception e)
+                catch (Exception exception)
                 {
-                    // Log error.
-                    string message = strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.ExceptionThrownMsg, e.ToString());
-                    Debug.Assert(false, message);
-                    logger.SendMessage(TestMessageLevel.Error, message);
+                    // Log exception as error.
+                    logger.WriteException(exception);
                 }
             }
+
+            logger.WriteInformation(strings.FinishedLooking);
 
             return testReader.TestCases;
         }

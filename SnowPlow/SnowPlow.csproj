@@ -81,6 +81,7 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="GroupByFirstDescribe.cs" />
     <Compile Include="IglooResult.cs" />
+    <Compile Include="Logger.cs" />
     <Compile Include="PlowConfiguration.cs" />
     <Compile Include="IglooSpecNameFormatter.cs" />
     <Compile Include="Process.cs" />

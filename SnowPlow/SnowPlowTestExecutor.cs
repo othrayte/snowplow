@@ -1,11 +1,8 @@
 using EnsureThat;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 
 namespace SnowPlow
@@ -22,14 +19,15 @@ namespace SnowPlow
 
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            IEnumerable<TestCase> tests = SnowPlowTestDiscoverer.GetTests(sources, frameworkHandle, null);
+            IEnumerable<TestCase> tests = SnowPlowTestDiscoverer.GetTests(sources, new Logger(frameworkHandle), null);
 
             RunTests(tests, runContext, frameworkHandle);
-
         }
 
         private void RunTests(String source, IEnumerable<TestCase> tests, IFrameworkHandle frameworkHandle, IRunContext runContext)
         {
+            Logger logger = new Logger(frameworkHandle);
+
             if (m_cancelled)
             {
                 return;
@@ -38,24 +36,24 @@ namespace SnowPlow
             FileInfo file = new FileInfo(source);
             if (!file.Exists)
             {
-                frameworkHandle.SendMessage(TestMessageLevel.Warning, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.UnknownFileX, source));
+                logger.WriteWarning(strings.UnknownFileX, source);
             }
 
             Container settings = PlowConfiguration.FindConfiguration(file);
 
             if (settings == null)
             {
-                frameworkHandle.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.SkipXNotListed, source));
+                logger.WriteInformation(strings.SkipXNotListed, source);
                 return;
             }
 
             if (!settings.Enable)
             {
-                frameworkHandle.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.SkipXDisabled, source));
+                logger.WriteInformation(strings.SkipXDisabled, source);
                 return;
             }
 
-            frameworkHandle.SendMessage(TestMessageLevel.Informational, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.PlowingInX, source));
+            logger.WriteInformation(strings.PlowingInX, source);
 
             // Start the process, Call WaitForExit and then the using statement will close.
             Process process = new Process(file, settings);
@@ -79,13 +77,13 @@ namespace SnowPlow
                     if (!unittestProcess.HasExited)
                     {
                         unittestProcess.Kill();
-                        frameworkHandle.SendMessage(TestMessageLevel.Error, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.TimoutInX, source));
+                        logger.WriteError(strings.TimoutInX, source);
                         return;
                     }
 
                     if (unittestProcess.ExitCode < 0)
                     {
-                        frameworkHandle.SendMessage(TestMessageLevel.Error, strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.XReturnedErrorCodeY, source, unittestProcess.ExitCode));
+                        logger.WriteError(strings.XReturnedErrorCodeY, source, unittestProcess.ExitCode);
                         return;
                     }
                 }
@@ -98,6 +96,8 @@ namespace SnowPlow
             Ensure.That(() => tests).IsNotNull();
             Ensure.That(() => runContext).IsNotNull();
             Ensure.That(() => frameworkHandle).IsNotNull();
+
+            Logger logger = new Logger(frameworkHandle);
 
             m_cancelled = false;
 
@@ -115,12 +115,10 @@ namespace SnowPlow
                 {
                     RunTests(source, sources[source], frameworkHandle, runContext);
                 }
-                catch (Exception e)
+                catch (Exception exception)
                 {
-                    // Log error.
-                    string message = strings.SnowPlow_ + string.Format(CultureInfo.CurrentCulture, strings.ExceptionThrownMsg, e.ToString());
-                    Debug.Assert(false, message);
-                    frameworkHandle.SendMessage(TestMessageLevel.Error, message);
+                    // Log exception as error.
+                    logger.WriteException(exception);
                 }
 
             }
