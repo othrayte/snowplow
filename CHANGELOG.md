@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 ### Added
+ - Support for localisable strings.
+ - Compliance with VS built in C# code analysis ("Microsoft All Rules"")
 
 ## [1.1.4.0] - 2015-12-22
 ### Added
