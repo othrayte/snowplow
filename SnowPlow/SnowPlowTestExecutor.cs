@@ -68,9 +68,6 @@ namespace SnowPlow
                 {
                     string rawContent = unittestProcess.StandardOutput.ReadToEnd();
 
-                    XmlTestResultReader testReader = new XmlTestResultReader(frameworkHandle);
-                    testReader.read(tests, XmlWasher.Clean(rawContent));
-
                     int timeout = 10000;
                     unittestProcess.WaitForExit(timeout);
 
@@ -86,6 +83,9 @@ namespace SnowPlow
                         logger.WriteError(strings.XReturnedErrorCodeY, source, unittestProcess.ExitCode);
                         return;
                     }
+
+                    XmlTestResultReader testReader = new XmlTestResultReader(frameworkHandle);
+                    testReader.read(tests, XmlWasher.Clean(rawContent));
                 }
             }
         }
