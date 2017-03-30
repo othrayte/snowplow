@@ -3,6 +3,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 ### Added
+ - Support for .NET 4.6
 
 ## [1.1.5.0] - 2016-01-18
 ### Added
