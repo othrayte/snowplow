@@ -22,3 +22,7 @@ In theory it should would with bandit, however that has not been tested.
 ## Icon
 
 The icon used for SnowPlow is from http://icons8.com and is an .ico file comprising the free sizes of the icon at ic8.link/17128
+
+## Development
+
+Opening this vs project requires that the "Microsoft Visual Studio 2013 SDK" is installed.
