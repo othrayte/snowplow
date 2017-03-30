@@ -2,13 +2,15 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [1.1.6.0] - 2017-3-30
 ### Added
- - Support for .NET 4.6
+ - Support for .NET 4.6.
 
 ## [1.1.5.0] - 2016-01-18
 ### Added
  - Support for localisable strings.
- - Compliance with VS built in C# code analysis ("Microsoft All Rules"")
+ - Compliance with VS built in C# code analysis ("Microsoft All Rules"").
 
 ### Fixed
  - Crashing unit test containers reported as snowplow exception (#1)
