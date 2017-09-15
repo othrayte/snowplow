@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.7.0] - 2017-9-15
+### Added
+ - Warning if it looks like environment variable expansion has failed.
+
 ## [1.1.6.0] - 2017-3-30
 ### Added
  - Support for .NET 4.6.
