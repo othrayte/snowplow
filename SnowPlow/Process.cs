@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace SnowPlow
 {
@@ -23,8 +24,10 @@ namespace SnowPlow
             Arguments.Add("--output=xunit");
         }
 
-        public ProcessStartInfo StartInfo()
-        {
+		public ProcessStartInfo StartInfo(Logger logger)
+		{
+			Ensure.That(() => logger).IsNotNull();
+
             ProcessStartInfo startInfo = new ProcessStartInfo();
             startInfo.CreateNoWindow = false;
             startInfo.WorkingDirectory = File.Directory.FullName;
@@ -41,28 +44,35 @@ namespace SnowPlow
                 {
                     startInfo.EnvironmentVariables.Remove(var.Name);
                 }
-                startInfo.EnvironmentVariables.Add(var.Name, Environment.ExpandEnvironmentVariables(var.Value));
+				String expandedValue = Environment.ExpandEnvironmentVariables(var.Value);
+				Regex unexpandedEnvVar = new Regex(@"%[a-zA-Z0-9_]+%", RegexOptions.Singleline);
+				if (unexpandedEnvVar.IsMatch(expandedValue))
+				{
+					logger.WriteWarning(strings.UnexpandedEnvVarInS, var.Name, expandedValue);
+				}
+				startInfo.EnvironmentVariables.Add(var.Name, expandedValue);
+
             }
             return startInfo;
         }
 
-        public System.Diagnostics.Process ListTests()
+		public System.Diagnostics.Process ListTests(Logger logger)
         {
-            ProcessStartInfo info = StartInfo();
+            ProcessStartInfo info = StartInfo(logger);
             info.Arguments += " --list";
             return System.Diagnostics.Process.Start(info);
         }
 
-        public System.Diagnostics.Process ExecuteTests()
+		public System.Diagnostics.Process ExecuteTests(Logger logger)
         {
-            return System.Diagnostics.Process.Start(StartInfo());
+			return System.Diagnostics.Process.Start(StartInfo(logger));
         }
 
-        public System.Diagnostics.Process DebugTests(IFrameworkHandle frameworkHandle)
+		public System.Diagnostics.Process DebugTests(IFrameworkHandle frameworkHandle, Logger logger)
         {
             Ensure.That(() => frameworkHandle).IsNotNull();
 
-            ProcessStartInfo info = StartInfo();
+			ProcessStartInfo info = StartInfo(logger);
             Dictionary<string, string> environment =
                 info.EnvironmentVariables.Cast<DictionaryEntry>().ToDictionary(
                     item => item.Key.ToString(),

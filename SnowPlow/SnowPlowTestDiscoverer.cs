@@ -55,7 +55,7 @@ namespace SnowPlow
 
                     Process process = new Process(file, settings);
                     // Start the process, Call WaitForExit and then the using statement will close.
-                    using (System.Diagnostics.Process unittestProcess = process.ListTests())
+                    using (System.Diagnostics.Process unittestProcess = process.ListTests(logger))
                     {
                         string rawContent = unittestProcess.StandardOutput.ReadToEnd();
 

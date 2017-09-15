@@ -60,11 +60,11 @@ namespace SnowPlow
 
             if (runContext.IsBeingDebugged)
             {
-                process.DebugTests(frameworkHandle).WaitForExit();
+				process.DebugTests(frameworkHandle, logger).WaitForExit();
             }
             else
             {
-                using (System.Diagnostics.Process unittestProcess = process.ExecuteTests())
+				using (System.Diagnostics.Process unittestProcess = process.ExecuteTests(logger))
                 {
                     string rawContent = unittestProcess.StandardOutput.ReadToEnd();
 

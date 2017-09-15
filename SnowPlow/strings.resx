@@ -147,6 +147,9 @@
   <data name="TimoutInX" xml:space="preserve">
     <value>Ran out of time plowing tests in {0}, test process has been killed.</value>
   </data>
+  <data name="UnexpandedEnvVarInS" xml:space="preserve">
+    <value>Warning! Environment variable expansion may have failed. Setting {0} to {1}</value>
+  </data>
   <data name="UnknownDescribe" xml:space="preserve">
     <value>Unknown</value>
     <comment>Shown when the root level describe is unknown for a test</comment>
