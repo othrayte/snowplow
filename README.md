@@ -1,6 +1,6 @@
 # SnowPlow
 
-SnowPlow is a unit test adaptor for Visual Studio 2013+ for integrating igloo unit tests into the Unit Test Explorer.
+SnowPlow is a unit test adaptor for Visual Studio 2012+ for integrating igloo unit tests into the Unit Test Explorer.
 In theory it should would with bandit, however that has not been tested.
 
 ## Features

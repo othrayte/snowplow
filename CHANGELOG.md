@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.8.0] - 2018-1-16
+### Added
+ - Added support for VS2017
+ - Upgraded solution to VS2017
+
 ## [1.1.7.0] - 2017-9-15
 ### Added
  - Warning if it looks like environment variable expansion has failed.
