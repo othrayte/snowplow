@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [1.1.9.0] - 2018-5-7
+### Added
  - Added support for using SnowPlow with vstest.console.exe.
 
 ## [1.1.8.0] - 2018-1-16
